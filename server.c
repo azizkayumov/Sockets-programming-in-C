@@ -118,9 +118,10 @@ void *connection_handler(void *socket_desc){
       while( (read_size = recv(sock , client_message , 2000 , 0)) > 0 ){
           //Send the message back to client
           message = "You wrote: ";
+          //Send the message back to client
           write(sock , message , strlen(message));
           write(sock , client_message , read_size);
-          bzero(client_message, read_size);
+          //bzero(client_message, read_size);
       }
 
       if(read_size == 0){
@@ -128,7 +129,7 @@ void *connection_handler(void *socket_desc){
           fflush(stdout);
       }
       else if(read_size == -1){
-        perror("recv failed");
+          perror("recv failed");
       }
 
       //Free the socket pointer
