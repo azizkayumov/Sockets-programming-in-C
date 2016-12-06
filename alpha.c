@@ -53,7 +53,7 @@ int main(){
       };
       */
 
-      char *IP = "127.0.0.1";
+      char *IP = "192.168.16.162";
       int OPEN_PORT = 1000 + rand()%9000; //first, you may want to find the open port before typing dummy 8000
 
       server.sin_addr.s_addr = inet_addr(IP);
@@ -248,8 +248,8 @@ ERROR:
 
 EXIT:
       //shutdown the socket pointer
-      while (shutdown(sock, 2)!=0) {
-          puts("Error while closing the socket!");
+      while (shutdown(sock, 2)!=0 || close(sock)) {
+          perror("Error while closing the socket: ");
       }
       puts("Client disconnected");
       //free up the socket
