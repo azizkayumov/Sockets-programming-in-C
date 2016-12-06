@@ -4,6 +4,7 @@
 #include <unistd.h> //write(socket, message, strlen(message))
 #include <string.h> //strlen
 #include <stdlib.h> //strlen
+#include <time.h> //srand
 #include <pthread.h> //for threading, link with lpthread:
 /*
       gcc program.c -lpthread
@@ -24,6 +25,8 @@ int main(){
       Type - SOCK_STREAM (this means connection oriented TCP protocol)
       Protocol - 0 [ or IPPROTO_IP This is IP protocol]
       */
+
+      srand(time(NULL)); //random seed
       int socket_desc = socket(AF_INET, SOCK_STREAM, 0);
       if (socket_desc == -1) {
           printf("Could not create a socket\n");
@@ -51,7 +54,7 @@ int main(){
       */
 
       char *IP = "127.0.0.1";
-      unsigned short OPEN_PORT = 8888; //first, you may want to find the open port before typing dummy 8000
+      int OPEN_PORT = 1000 + rand()%9000; //first, you may want to find the open port before typing dummy 8000
 
       server.sin_addr.s_addr = inet_addr(IP);
       server.sin_family = AF_INET;
@@ -62,6 +65,7 @@ int main(){
             return 1;
       }
       puts("Bind done");
+      printf("IP = [%s:%d]\n", IP, OPEN_PORT);
 
       //listen for new connections:
       listen(socket_desc, 3);
