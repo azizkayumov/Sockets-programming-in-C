@@ -1,24 +1,30 @@
-#include <stdio.h>
-#include <sys/socket.h> //socket
-#include <arpa/inet.h> //inet_addr
-#include <unistd.h> //write(socket, message, strlen(message))
-#include <string.h> //strlen
-#include <stdlib.h> //strlen
-#include <time.h> //srand
-#include <pthread.h> //for threading, link with lpthread:
-/*
+  #include <stdio.h>
+  #include <sys/socket.h> //socket
+  #include <arpa/inet.h> //inet_addr
+  #include <unistd.h> //write(socket, message, strlen(message))
+  #include <string.h> //strlen
+  #include <stdlib.h> //strlen and strcmp
+  #include <time.h> //srand
+  #include <pthread.h> //for threading, link with lpthread:
+
+  /*
       gcc program.c -lpthread
-*/
+  */
 
-//connection handler
-void *connection_handler(void *);
+  //connection handler
+  void *connection_handler(void *);
 
-//clear screen
-void clrscr(){
+  char* card_number1="0000 0000 0000 0000";
+  unsigned int balance1 = 1000;
+  char* card_number2="1000 0000 0000 0000";
+  unsigned int balance2 = 1500;
+
+  //clear screen
+  void clrscr(){
     system("cls||clear");
-}
+  }
 
-int main(){
+  int main(){
       //create a socket, returns -1 of error happened
       /*
       Address Family - AF_INET (this is IP version 4)
@@ -53,7 +59,7 @@ int main(){
       };
       */
 
-      char *IP = "192.168.16.162";
+      char *IP = "127.0.0.1";
       int OPEN_PORT = 1000 + rand()%9000; //first, you may want to find the open port before typing dummy 8000
 
       server.sin_addr.s_addr = inet_addr(IP);
@@ -83,8 +89,8 @@ int main(){
         int CLIENT_PORT = ntohs(client.sin_port);
         printf("       CLIENT = {%s:%d}\n", CLIENT_IP, CLIENT_PORT);
         //reply to the client
-        char* message = "Hello, client! I have received your connection, now I will assign a handler for you!\n";
-        write(new_socket, message, strlen(message));
+        //char* message = "Hello, client! I have received your connection, now I will assign a handler for you!\n";
+        //write(new_socket, message, strlen(message));
 
         pthread_t sniffer_thread;
         new_sock = malloc(1);
@@ -104,23 +110,20 @@ int main(){
       }
 
       return 0;
-}
+  }
 
 
 
-/*
+  /*
     _    _       _           ____              _
    / \  | |_ __ | |__   __ _| __ )  __ _ _ __ | | __
   / _ \ | | '_ \| '_ \ / _` |  _ \ / _` | '_ \| |/ /
- / ___ \| | |_) | | | | (_| | |_) | (_| | | | |   <
-/_/   \_\_| .__/|_| |_|\__,_|____/ \__,_|_| |_|_|\_\
+  / ___ \| | |_) | | | | (_| | |_) | (_| | | | |   <
+  /_/   \_\_| .__/|_| |_|\__,_|____/ \__,_|_| |_|_|\_\
           |_|
-
-*/
-
-
-//connection handler
-void *connection_handler(void *socket_desc){
+  */
+  //connection handler
+  void *connection_handler(void *socket_desc){
       //get the socket descriptor
       int sock = *(int*)socket_desc;
       int read_size;
@@ -135,10 +138,10 @@ void *connection_handler(void *socket_desc){
       message = "--------------Welcome to AlphaBank ATM--------------\n";write(sock, message, strlen(message));
       message = "\n";write(sock, message, strlen(message));
 
-CONFIRM:
+  CONFIRM:
       //todo: enter visa card and its pin
 
-MENU: message = "1. Balance\n2. Deposit\n3. Withdraw\n4. Transfer\nPlease, choose the transaction number: ";
+  MENU: message = "1. Balance\n2. Deposit\n3. Withdraw\n4. Transfer\nPlease, choose the transaction number: ";
       write(sock , message , strlen(message));
       read_size = recv(sock, client_message, 2000, 0);
       switch (client_message[0]) {
@@ -148,16 +151,54 @@ MENU: message = "1. Balance\n2. Deposit\n3. Withdraw\n4. Transfer\nPlease, choos
           case '4':goto TRANSFER;break;
       }
 
-BALANCE:
+  BALANCE:
       message = "------------------------------------------------------\n";
       write(sock, message, strlen(message));
       message = "Please, enter your card number: ";
       write(sock, message, strlen(message));
       read_size = recv(sock, client_message, 2000, 0);
-      message = "Balance: 1,200.000 USD\n";
-      write(sock, message, strlen(message));
-      message = "------------------------------------------------------\n";
-      write(sock, message, strlen(message));
+
+      int isEqual = 1;
+      for (size_t i = 0; i < strlen(card_number1); i++) {
+         if (card_number1[i]!=client_message[i]) {
+            isEqual = 0;
+            break;
+         }
+      }
+
+      if(isEqual==0){
+        isEqual = 2;
+        for (size_t i = 0; i < strlen(card_number2); i++) {
+          if (card_number2[i]!=client_message[i]) {
+              isEqual = 0;
+              break;
+          }
+        }
+      }
+
+      if ( isEqual == 0 ) {
+        message = "No such card number in our bank\n";
+        write(sock, message, strlen(message));
+      }else{
+
+        if (isEqual==1) {
+            char cated[2000];
+            sprintf(cated, "Balance: %d USD\n", balance1);
+            write(sock, cated, strlen(cated));
+            message = "------------------------------------------------------\n";
+            write(sock, message, strlen(message));
+        }else
+        if (isEqual==2) {
+            char cated[2000];
+            sprintf(cated, "Balance: %d USD\n", balance2);
+            write(sock, cated, strlen(cated));
+            message = "------------------------------------------------------\n";
+            write(sock, message, strlen(message));
+        }
+
+
+      }
+
       message = "Enter 1 to go back to menu, 0 to exit: ";
       write(sock, message, strlen(message));
       read_size = recv(sock, client_message, 2000, 0);
@@ -165,19 +206,59 @@ BALANCE:
           goto MENU;
       }else
           goto EXIT;
-DEPOSIT:
+  DEPOSIT:
       message = "------------------------------------------------------\n";
       write(sock, message, strlen(message));
       message = "Please, enter your card number: ";
       write(sock, message, strlen(message));
       read_size = recv(sock, client_message, 2000, 0);
-      message = "Please, enter the amount of money to deposit: ";
-      write(sock, message, strlen(message));
-      read_size = recv(sock, client_message, 2000, 0);
-      message = "Please, insert cash to the ATM...\nDone!\n";
-      write(sock, message, strlen(message));
-      message = "------------------------------------------------------\n";
-      write(sock, message, strlen(message));
+
+      isEqual = 1;
+      for (size_t i = 0; i < strlen(card_number1); i++) {
+         if (card_number1[i]!=client_message[i]) {
+            isEqual = 0;
+            break;
+         }
+      }
+
+      if(isEqual==0){
+        isEqual = 2;
+        for (size_t i = 0; i < strlen(card_number2); i++) {
+          if (card_number2[i]!=client_message[i]) {
+              isEqual = 0;
+              break;
+          }
+        }
+      }
+
+      if ( isEqual == 0 ) {
+        message = "No such card number in our bank\n";
+        write(sock, message, strlen(message));
+      }else{
+
+        if (isEqual==1) {
+          message = "Please, enter the amount of money to deposit: ";
+          write(sock, message, strlen(message));
+          read_size = recv(sock, client_message, 2000, 0);
+          int cash = atoi(client_message);
+          balance1 += cash;
+          message = "Please, insert cash to the ATM...\nDone!\n";
+          write(sock, message, strlen(message));
+          message = "------------------------------------------------------\n";
+          write(sock, message, strlen(message));
+        }else
+        if (isEqual==2) {
+          message = "Please, enter the amount of money to deposit: ";
+          write(sock, message, strlen(message));
+          read_size = recv(sock, client_message, 2000, 0);
+          int cash = atoi(client_message);
+          balance2 += cash;
+          message = "Please, insert cash to the ATM...\nDone!\n";
+          write(sock, message, strlen(message));
+          message = "------------------------------------------------------\n";
+          write(sock, message, strlen(message));
+        }
+      }
 
       message = "Enter 1 to go back to menu, 0 to exit: ";
       write(sock, message, strlen(message));
@@ -187,19 +268,70 @@ DEPOSIT:
       }else
           goto EXIT;
 
-WITHDRAW:
+  WITHDRAW:
       message = "------------------------------------------------------\n";
       write(sock, message, strlen(message));
       message = "Please, enter your card number: ";
       write(sock, message, strlen(message));
       read_size = recv(sock, client_message, 2000, 0);
-      message = "Please, enter the amount of money to withdraw: ";
-      write(sock, message, strlen(message));
-      read_size = recv(sock, client_message, 2000, 0);
-      message = "Please, count cash before leaving the ATM.\n";
-      write(sock, message, strlen(message));
-      message = "------------------------------------------------------\n";
-      write(sock, message, strlen(message));
+
+      isEqual = 1;
+      for (size_t i = 0; i < strlen(card_number1); i++) {
+          if (card_number1[i]!=client_message[i]) {
+              isEqual = 0;
+              break;
+            }
+      }
+
+      if(isEqual==0){
+          isEqual = 2;
+          for (size_t i = 0; i < strlen(card_number2); i++) {
+              if (card_number2[i]!=client_message[i]) {
+                  isEqual = 0;
+                  break;
+              }
+          }
+      }
+
+      if ( isEqual == 0 ) {
+          message = "No such card number in our bank\n";
+          write(sock, message, strlen(message));
+      }else{
+          if (isEqual==1) {
+              message = "Please, enter the amount of money to withdraw: ";
+              write(sock, message, strlen(message));
+              read_size = recv(sock, client_message, 2000, 0);
+              int cash = atoi(client_message);
+              if (cash<balance1) {
+                   balance1 -= cash;
+                   message = "Please, count cash before leaving the ATM...\nDone!\n";
+                   write(sock, message, strlen(message));
+              }else{
+                   message = "Sorry, you don't have enough money.\nYou may want to check your balance.\n";
+                   write(sock, message, strlen(message));
+              }
+
+              message = "------------------------------------------------------\n";
+              write(sock, message, strlen(message));
+          }else
+          if (isEqual==2) {
+              message = "Please, enter the amount of money to withdraw: ";
+              write(sock, message, strlen(message));
+              read_size = recv(sock, client_message, 2000, 0);
+              int cash = atoi(client_message);
+              if (cash<balance2) {
+                  balance2 -= cash;
+                  message = "Please, count cash before leaving the ATM...\nDone!\n";
+                  write(sock, message, strlen(message));
+              }else{
+                  message = "Sorry, you don't have enough money.\nYou may want to check your balance.\n";
+                  write(sock, message, strlen(message));
+              }
+
+              message = "------------------------------------------------------\n";
+              write(sock, message, strlen(message));
+            }
+      }
 
       message = "Enter 1 to go back to menu, 0 to exit: ";
       write(sock, message, strlen(message));
@@ -209,7 +341,7 @@ WITHDRAW:
       }else
           goto EXIT;
 
-TRANSFER:
+  TRANSFER:
       message = "------------------------------------------------------\n";
       write(sock, message, strlen(message));
       message = "Please, enter your card number: ";
@@ -235,7 +367,7 @@ TRANSFER:
           goto EXIT;
 
 
-ERROR:
+  ERROR:
       message = "Thank you for using the ATM, have a nice day!\n";
       write(sock, message, strlen(message));
       if(read_size == 0){
@@ -246,7 +378,7 @@ ERROR:
           perror("recv failed");
       }
 
-EXIT:
+  EXIT:
       //shutdown the socket pointer
       while (shutdown(sock, 2)!=0 || close(sock)) {
           perror("Error while closing the socket: ");
@@ -255,4 +387,4 @@ EXIT:
       //free up the socket
       free(socket_desc);
       return 0;
-}
+  }
