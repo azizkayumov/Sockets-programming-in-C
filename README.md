@@ -18,6 +18,13 @@ If above steps was successfully done, then client may be able to write to server
   3) Open another terminal
   4) Using telnet service, connect to the IP and port number, for example, type:
       telnet 127.0.0.1 8888
-  5) Now you are using a simple ATM, just enjoy!
+  5) Now you are using a simple ATM, there are to bank accounts with card numbers and balances:
+  
+        -  char* card_number1="0000 0000 0000 0000";
+        -  unsigned int balance1 = 1000; 
+        -  char* card_number2="1000 0000 0000 0000";
+        -  unsigned int balance2 = 1500;
+  6) ATM asks for card number, just enjoy above numbers
+  7) Test other functions: BALANCE, WITHDRAW, DEPOSIT between two clients
 
 Give some stars!
